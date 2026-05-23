@@ -1,26 +1,26 @@
-​✨ Key Features:
+Solo CKPool Tracker – A simple mobile-friendly dashboard for Bitaxe miners
 
-​100% Client-Side: Just one .html file. 
-No server or installation needed.
+Hey fellow solo miners! 👋
+I built a lightweight HTML dashboard for tracking your solo CKPool mining stats on mobile.
 
-​Live Auto-Sync (5s): Automatically pulls data from ckpool without refreshing.
+Features:
 
-​Difficulty Spikes Chart: Visualizes your individual share difficulty submissions in real-time.
+Real-time hashrate (1m / session best / 5m average)
 
-​Hashrate History Chart: Tracks your 5-minute hashrate trends.
+Share difficulty tracking with live chart
+Session best & all-time best share
 
-​Local Storage: Securely saves your wallet address and your "All-Time Best Share" locally on your browser.
+Latest Bitcoin block info (height, mined by, difficulty) via mempool.space
 
-​Mobile Optimized: Looks great on phones and dark-mode friendly.
+Background tab pause to save battery
+Works offline-first with localStorage
 
-​🛠️ How to Use (Takes 1 minute):
+How to use:
 
-​Open a text editor (Notepad, etc.) and paste the code.
+Download the HTML file
+Open with a local file server (e.g. Cx File Explorer on Android)
+Enter your BTC wallet address → done!
+No backend, no install, just one HTML file. 🙌
+Built for Bitaxe Gamma but works with any BM1370-based miner on solo.ckpool.org.
 
-​Save the file as tracker.html.
-
-​Double-click to open it in any web browser (Chrome, Safari, etc.).
-
-​Enter your Bitcoin Wallet Address and hit "Save".
-
-​💡 Pro-Tip for Mobile Users: Open the .html file on your phone's browser and select "Add to Home Screen". It will work just like a native app!
+Note: CKPool API uses allorigins.win CORS proxy — wallet address passes through a third-party server. Use at your own discretion.
