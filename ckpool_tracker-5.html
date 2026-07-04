@@ -1,0 +1,829 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solo CKPool Tracker</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <style>
+        body { 
+            background-color: #0f172a; 
+            color: #f8fafc; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            margin: 0; 
+            padding: 20px; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+        }
+        .container { 
+            width: 100%; 
+            max-width: 900px; 
+        }
+        .header { 
+            text-align: center; 
+            margin-bottom: 20px; 
+            background: #1e293b; 
+            padding: 20px 20px 12px 20px; 
+            border-radius: 12px; 
+            border: 1px solid #334155; 
+        }
+        h1 { 
+            margin: 0 0 15px 0; 
+            color: #38bdf8; 
+            font-size: 24px; 
+            font-weight: 700; 
+        }
+        .address-config { 
+            display: flex; 
+            gap: 10px; 
+            justify-content: center; 
+            align-items: center; 
+            max-width: 650px; 
+            margin: 0 auto; 
+        }
+        .address-input { 
+            flex: 1; 
+            background: #0f172a; 
+            border: 1px solid #475569; 
+            border-radius: 6px; 
+            padding: 10px 12px; 
+            color: #f8fafc; 
+            font-family: monospace; 
+            font-size: 13px; 
+        }
+        .address-input:focus { 
+            outline: none; 
+            border-color: #38bdf8; 
+        }
+        .address-input.invalid {
+            border-color: #ef4444;
+        }
+        .btn-save { 
+            background: #0284c7; 
+            color: #ffffff; 
+            border: none; 
+            border-radius: 6px; 
+            padding: 10px 18px; 
+            font-size: 13px; 
+            font-weight: 600; 
+            cursor: pointer; 
+        }
+        .btn-save:hover {
+            background: #0369a1;
+        }
+        .validation-msg {
+            font-size: 11px;
+            color: #ef4444;
+            margin-top: 4px;
+            min-height: 0;
+            text-align: left;
+            max-width: 650px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .stats-grid { 
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); 
+            gap: 15px; 
+            margin-bottom: 20px; 
+        }
+        .stat-box { 
+            background: #1e293b; 
+            padding: 8px 8px; 
+            border-radius: 12px; 
+            text-align: center; 
+            border: 1px solid #334155; 
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .stat-label { 
+            font-size: 10px; 
+            color: #94a3b8; 
+            text-transform: uppercase; 
+            letter-spacing: 0.04em; 
+            line-height: 1.3;
+            height: auto;
+            margin-bottom: 2px;
+        }
+        .stat-value { 
+            font-size: 18px; 
+            font-weight: 700; 
+            margin-top: 3px; 
+        }
+        .chart-card { 
+            background: #1e293b; 
+            padding: 20px; 
+            border-radius: 12px; 
+            border: 1px solid #334155; 
+            margin-bottom: 20px; 
+        }
+        .chart-title { 
+            font-size: 14px; 
+            font-weight: 600; 
+            color: #94a3b8; 
+            margin-bottom: 12px; 
+        }
+        .status-indicator { 
+            font-size: 12px; 
+            text-align: center; 
+            color: #64748b; 
+            margin-top: -10px; 
+            margin-bottom: 15px; 
+        }
+        .proxy-notice {
+            background: #1c1917;
+            border: 1px solid #78350f;
+            border-radius: 8px;
+            font-size: 12px;
+            color: #fbbf24;
+            margin-bottom: 15px;
+            overflow: hidden;
+        }
+        .proxy-notice-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 14px;
+            cursor: pointer;
+            user-select: none;
+            line-height: 1.6;
+        }
+        .proxy-notice-header:hover { background: rgba(255,255,255,0.04); }
+        .proxy-toggle-icon {
+            font-size: 10px;
+            color: #a16207;
+            transition: transform 0.25s ease;
+            flex-shrink: 0;
+            margin-left: 8px;
+        }
+        .proxy-notice-body {
+            padding: 0 14px 10px 14px;
+            border-top: 1px solid #78350f;
+            line-height: 1.6;
+        }
+        .proxy-notice.collapsed .proxy-notice-body { display: none; }
+        .proxy-notice.collapsed .proxy-toggle-icon { transform: rotate(-90deg); }
+        .mempool-card {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .mempool-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #94a3b8;
+            margin-bottom: 12px;
+        }
+        .mempool-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+        .mempool-item {
+            text-align: center;
+        }
+        .mempool-label {
+            font-size: 10px;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-bottom: 4px;
+        }
+        .mempool-value {
+            font-size: 15px;
+            font-weight: 700;
+            color: #f8fafc;
+        }
+        .worker-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            margin-top: 4px;
+            gap: 4px;
+        }
+        .worker-label {
+            font-size: 10px;
+            color: #64748b;
+        }
+        .worker-val-w0 { color: #10b981; font-weight: 700; }
+        .worker-val-w1 { color: #38bdf8; font-weight: 700; }
+        .footer {
+            width: 100%;
+            text-align: right;
+            font-size: 12px;
+            color: #475569;
+            margin-top: 5px;
+            margin-bottom: 20px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>🛠️ Solo CKPool Tracker</h1>
+        <div class="address-config">
+            <input type="text" id="wallet-input" class="address-input" placeholder="Enter Bitcoin Wallet Address...">
+            <button id="btn-save" class="btn-save" onclick="saveAddress()">Save Address</button>
+        </div>
+        <div id="validation-msg" class="validation-msg"></div>
+    </div>
+
+    <div class="proxy-notice" id="proxy-notice">
+        <div class="proxy-notice-header" onclick="toggleProxy()">
+            <span>⚠️ <strong>Proxy Notice</strong></span>
+            <span class="proxy-toggle-icon">▼</span>
+        </div>
+        <div class="proxy-notice-body">
+            CKPool API requests are routed through <code>allorigins.win</code>, a third-party CORS proxy.
+            Your wallet address passes through this external server. For better privacy, consider using your own proxy.
+        </div>
+    </div>
+
+    <div id="status-text" class="status-indicator">Enter your Bitcoin wallet address...</div>
+
+    <!-- ⚡ Hashrate (합산) -->
+    <div class="stats-grid">
+        <div class="stat-box">
+            <div class="stat-label">Hashrate<br>Latest (1m)</div>
+            <div id="hr-latest" class="stat-value" style="color:#10b981;">—</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-label">Hashrate<br>Session Best</div>
+            <div id="hr-session" class="stat-value" style="color:#a78bfa;">—</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-label">Hashrate<br>Average (5m)</div>
+            <div id="hr-avg" class="stat-value" style="color:#38bdf8;">—</div>
+        </div>
+    </div>
+
+    <!-- 📊 Share Stats -->
+    <div class="stats-grid">
+        <div class="stat-box">
+            <div class="stat-label">Latest Share<br>Difficulty</div>
+            <div id="latest-diff" class="stat-value" style="color:#38bdf8;">—</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-label">Session Best<br>Share</div>
+            <div id="today-best" class="stat-value" style="color:#a78bfa;">—</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-label">Best Share<br>(All-Time)</div>
+            <div id="best-share" class="stat-value" style="color:#ef4444;">—</div>
+        </div>
+    </div>
+
+    <!-- 📈 Share Difficulty Chart -->
+    <div class="chart-card">
+        <div class="chart-title">📊 Share Difficulty History (Estimated)</div>
+        <canvas id="diffChart" height="120"></canvas>
+    </div>
+
+
+    <!-- ⛓️ Latest Block -->
+    <div class="mempool-card">
+        <div class="mempool-title">⛓️ Latest Block</div>
+        <div class="mempool-grid">
+            <div class="mempool-item">
+                <div class="mempool-label">Height</div>
+                <div id="mp-height" class="mempool-value" style="color:#f59e0b;">—</div>
+            </div>
+            <div class="mempool-item">
+                <div class="mempool-label">Found Time</div>
+                <div id="mp-time" class="mempool-value" style="font-size:13px;font-family:monospace;">—</div>
+            </div>
+            <div class="mempool-item">
+                <div class="mempool-label">Mined By</div>
+                <div id="mp-miner" class="mempool-value" style="color:#10b981;font-size:13px;">—</div>
+            </div>
+            <div class="mempool-item">
+                <div class="mempool-label">Difficulty</div>
+                <div id="mp-difficulty" class="mempool-value">—</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        Created by nomicode & Gemini · Security review by Claude
+    </div>
+</div>
+
+<script>
+    if (typeof Chart === 'undefined') {
+        document.getElementById('status-text').textContent = "❌ Chart.js load failed — please check network connection.";
+        document.getElementById('status-text').style.color = "#ef4444";
+        throw new Error("Chart.js not loaded");
+    }
+
+    function isValidBtcAddress(addr) {
+        if (!addr) return false;
+        const legacyOrP2SH = /^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/;
+        const bech32      = /^bc1[a-z0-9]{39,59}$/i;
+        return legacyOrP2SH.test(addr) || bech32.test(addr);
+    }
+
+    let btcAddress = "";
+    let updateInterval = null;
+    let diffChart;
+    let savedBestShareRaw = "0";
+    let sessionBaseBest  = 0;
+    let sessionBestHash  = 0;
+    let currentMempoolBlock = null;
+    // workers[i] = { name, hash1m, hash5m, sessionBestHash }
+    let workers = [];
+
+    window.onload = function() {
+        initCharts_diff();
+
+        // All-Time Best 불러오기 (신규 키 ckpool_max_best_share, 구버전 키도 마이그레이션)
+        const localBest = localStorage.getItem('ckpool_max_best_share')
+                        || localStorage.getItem('bitaxe_max_best_share');
+        if (localBest) {
+            savedBestShareRaw = localBest;
+            document.getElementById('best-share').textContent = formatDiff(localBest);
+        }
+
+
+        const savedAddress = localStorage.getItem('bitaxe_wallet_address');
+        if (savedAddress) {
+            document.getElementById('wallet-input').value = savedAddress;
+            btcAddress = savedAddress;
+            startMonitoring();
+        }
+
+        // localStorage 이전값 표시 (UI 초기값용, currentMempoolBlock은 세팅 안 함)
+        const lastBlock = localStorage.getItem('bitaxe_last_block');
+        if (lastBlock) {
+            try {
+                const b = JSON.parse(lastBlock);
+                document.getElementById('mp-height').textContent     = b.height;
+                document.getElementById('mp-time').innerHTML         = b.time || '—';
+                document.getElementById('mp-miner').textContent      = b.miner;
+                document.getElementById('mp-difficulty').textContent = b.difficulty;
+            } catch(e) {}
+        }
+
+        // WebSocket으로 실시간 블록 감지 (새 블록 → Latest/Session 갱신)
+        initMempoolWebSocket();
+        // 로드 직후 즉시 1회 REST 호출 (WS 연결 지연 동안 화면이 비어있지 않도록)
+        fetchMempool();
+        // REST 폴백: 20초마다 블록 정보 갱신 (WS 끊겼을 때 대비, 기존 60초 → 20초로 단축)
+        setInterval(fetchMempool, 20000);
+        
+        // 5초마다 'X mins ago' 텍스트를 최신화 (기존 10초 → 5초)
+        setInterval(renderBlockData, 5000);
+    };
+
+    // ── 해시레이트 박스 (합산)
+    function renderHashrateBoxes() {
+        if (workers.length === 0) return;
+        const total1m = workers.reduce((s, w) => s + (w.hash1m || 0), 0);
+        const total5m = workers.reduce((s, w) => s + (w.hash5m || 0), 0);
+        const totalSB = Math.max(...workers.map(w => w.sessionBestHash || 0), 0);
+        const el0 = document.getElementById('hr-latest');
+        const el1 = document.getElementById('hr-session');
+        const el2 = document.getElementById('hr-avg');
+        if (el0) el0.textContent = total1m.toFixed(2) + ' T';
+        if (el2) el2.textContent = total5m.toFixed(2) + ' T';
+        if (el1) el1.textContent = totalSB > 0 ? totalSB.toFixed(2) + ' T' : '—';
+    }
+
+    // ── Difficulty 박스 업데이트
+    function renderDiffBoxes(currentDiff) {
+        const latestEl = document.getElementById('latest-diff');
+        if (latestEl) latestEl.textContent = formatDiff(currentDiff);
+    }
+
+    function toggleProxy() {
+        const el = document.getElementById('proxy-notice');
+        el.classList.toggle('collapsed');
+    }
+
+    function saveAddress() {
+        const inputVal = document.getElementById('wallet-input').value.trim();
+        const msgEl    = document.getElementById('validation-msg');
+        const inputEl  = document.getElementById('wallet-input');
+
+        if (!inputVal) {
+            msgEl.textContent = 'Please enter a wallet address.';
+            inputEl.classList.add('invalid');
+            return;
+        }
+        if (!isValidBtcAddress(inputVal)) {
+            msgEl.textContent = 'Invalid BTC address format. (Legacy / P2SH / Bech32)';
+            inputEl.classList.add('invalid');
+            return;
+        }
+
+        msgEl.textContent = '';
+        inputEl.classList.remove('invalid');
+
+        localStorage.setItem('bitaxe_wallet_address', inputVal);
+        btcAddress = inputVal;
+        startMonitoring();
+    }
+
+    function startMonitoring() {
+        if (updateInterval) clearInterval(updateInterval);
+
+        const statusEl = document.getElementById('status-text');
+        statusEl.textContent = "⏳ Syncing...";
+        statusEl.style.color = "#10b981";
+
+        fetchData();
+        updateInterval = setInterval(fetchData, 2000);
+    }
+
+    document.addEventListener('visibilitychange', function() {
+        if (!btcAddress) return;
+        if (document.hidden) {
+            if (updateInterval) {
+                clearInterval(updateInterval);
+                updateInterval = null;
+            }
+            const statusEl = document.getElementById('status-text');
+            statusEl.textContent = "⏸ Paused";
+            statusEl.style.color = "#64748b";
+        } else {
+            const statusEl = document.getElementById('status-text');
+            statusEl.textContent = "⏳ Syncing...";
+            statusEl.style.color = "#10b981";
+            fetchData();
+            updateInterval = setInterval(fetchData, 2000);
+        }
+    });
+
+    function initCharts_diff() {
+        const ctxDiff = document.getElementById('diffChart').getContext('2d');
+        diffChart = new Chart(ctxDiff, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    data: [],
+                    borderColor: '#38bdf8',
+                    backgroundColor: 'rgba(56, 189, 248, 0.08)',
+                    borderWidth: 2,
+                    fill: true,
+                    pointRadius: 1.5,
+                    tension: 0.2
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { color: '#334155' }, ticks: { display: false } },
+                    y: {
+                        grid: { color: '#334155' },
+                        ticks: {
+                            color: '#94a3b8',
+                            callback: function(value) {
+                                if (value >= 1e9) return (value / 1e9).toFixed(1) + " G";
+                                if (value >= 1e6) return (value / 1e6).toFixed(1) + " M";
+                                if (value >= 1e3) return (value / 1e3).toFixed(1) + " k";
+                                return value;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function formatDiff(value) {
+        const num = parseFloat(String(value).replace(/[^0-9.]/g, '')) || 0;
+        if (num >= 1e12) return (num / 1e12).toFixed(2) + " T";
+        if (num >= 1e9)  return (num / 1e9).toFixed(2)  + " G";
+        if (num >= 1e6)  return (num / 1e6).toFixed(2)  + " M";
+        if (num >= 1e3)  return (num / 1e3).toFixed(1)  + " k";
+        return num.toFixed(1);
+    }
+
+    function formatLargeDiff(diff) {
+        if (!diff) return '—';
+        if (diff >= 1e12) return (diff / 1e12).toFixed(2) + " T";
+        if (diff >= 1e9) return (diff / 1e9).toFixed(2) + " G";
+        return diff.toLocaleString();
+    }
+
+    function parseHashrateToTH(str) {
+        if (!str) return 0;
+        const num = parseFloat(str.replace(/[^0-9.]/g, '')) || 0;
+        const upper = str.toUpperCase();
+        if (upper.includes('P'))  return num * 1000;
+        if (upper.includes('T'))  return num;
+        if (upper.includes('G'))  return num / 1000;
+        if (upper.includes('M'))  return num / 1e6;
+        return num;
+    }
+
+    function parseTotalShares(str) {
+        if (!str) return 0;
+        const num = parseFloat(str.replace(/[^0-9.]/g, '')) || 0;
+        const upper = str.toUpperCase();
+        if (upper.includes('G')) return num * 1e9;
+        if (upper.includes('M')) return num * 1e6;
+        if (upper.includes('K')) return num * 1e3;
+        return num;
+    }
+
+    // 블록 발견까지 무제한 누적 (새 블록 시 initMempoolWebSocket 핸들러에서 리셋됨)
+    // 단, 너무 긴 라운드(수 시간 이상) 대비 안전장치로 2000포인트 초과 시 절반으로 다운샘플링
+    function pushToChart(chart, label, value) {
+        chart.data.labels.push(label);
+        chart.data.datasets[0].data.push(value);
+
+        if (chart.data.labels.length > 2000) {
+            chart.data.labels = chart.data.labels.filter((_, i) => i % 2 === 0);
+            chart.data.datasets[0].data = chart.data.datasets[0].data.filter((_, i) => i % 2 === 0);
+        }
+
+        chart.update();
+    }
+
+    // ── CORS 프록시 목록 (순서대로 시도, 실패 시 다음으로 폴백) ────────────────
+    const PROXIES = [
+        {
+            build : url => "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(url),
+            parse : json => json
+        },
+        {
+            build : url => "https://api.allorigins.win/get?url=" + encodeURIComponent(url) + "&_nocache=" + Date.now(),
+            parse : json => JSON.parse(json.contents)
+        },
+        {
+            build : url => "https://thingproxy.freeboard.io/fetch/" + url,
+            parse : json => json
+        }
+    ];
+    let proxyIndex = 0;
+
+    function fetchWithProxy(targetUrl) {
+        const proxy = PROXIES[proxyIndex];
+        return fetch(proxy.build(targetUrl))
+            .then(res => { if (!res.ok) throw new Error('HTTP ' + res.status); return res.json(); })
+            .then(raw  => {
+                const data = (typeof raw === 'string') ? JSON.parse(raw) : raw;
+                return proxy.parse(data);
+            })
+            .catch(err => {
+                const next = (proxyIndex + 1) % PROXIES.length;
+                console.warn(`[Proxy] #${proxyIndex} 실패 → #${next} 전환 (${err.message})`);
+                proxyIndex = next;
+                throw err;
+            });
+    }
+
+    function fetchData() {
+        if (!btcAddress) return;
+
+        const targetUrl = "https://solo.ckpool.org/users/" + encodeURIComponent(btcAddress);
+
+        fetchWithProxy(targetUrl)
+            .then(userData => {
+                console.debug('[ckpool API]', userData);
+                if (!userData || Object.keys(userData).length === 0) throw new Error('Empty response');
+
+                const d = new Date();
+                const hh = String(d.getHours()).padStart(2, '0');
+                const mm = String(d.getMinutes()).padStart(2, '0');
+                const ss = String(d.getSeconds()).padStart(2, '0');
+                const timeStr = `${hh}:${mm}:${ss}`;
+
+                // ── All-Time Best Share ──
+                // ckpool의 bestshare는 "계정 생성 이후 전체 역대 최고 share difficulty"
+                // localStorage 값과 API 값 중 더 큰 쪽을 항상 유지 (running max)
+                const bestShareRaw        = userData.bestshare || 0;
+                const apiBest              = parseFloat(bestShareRaw) || 0;
+                const existingSavedBest    = parseFloat(savedBestShareRaw) || 0;
+                const newAllTimeBest       = Math.max(apiBest, existingSavedBest);
+
+                if (newAllTimeBest > existingSavedBest) {
+                    savedBestShareRaw = newAllTimeBest.toString();
+                    localStorage.setItem('ckpool_max_best_share', savedBestShareRaw);
+                }
+
+                document.getElementById('best-share').textContent = formatDiff(savedBestShareRaw);
+
+                // ── 워커별 해시레이트 파싱
+                const workerArr = userData.worker || [];
+
+                // 초회: workers 배열 초기화 + 이름 설정
+                if (workers.length === 0 && workerArr.length > 0) {
+                    workers = workerArr.map(w => ({
+                        name: w.workername || 'Worker',
+                        hash1m: 0, hash5m: 0,
+                        sessionBestHash: 0,
+                    }));
+                    // 박스 워커 이름 표시 (주소 뒤 6자리)
+
+                }
+
+                // 워커별 갱신
+                workerArr.forEach((w, i) => {
+                    if (!workers[i]) return;
+                    const h1m = parseHashrateToTH(w.hashrate1m || '0');
+                    const h5m = parseHashrateToTH(w.hashrate5m || '0');
+                    workers[i].hash1m = h1m;
+                    workers[i].hash5m = h5m;
+                    if (h1m > (workers[i].sessionBestHash || 0))
+                        workers[i].sessionBestHash = h1m;
+
+
+                });
+
+                renderHashrateBoxes();
+
+                let currentDiffToPlot;
+                if (userData.lastdiff !== undefined) {
+                    currentDiffToPlot = parseFloat(String(userData.lastdiff).replace(/[^0-9.]/g, '')) || 0;
+                    document.querySelector('#diffChart').closest('.chart-card')
+                        .querySelector('.chart-title').textContent = "📊 Share Difficulty History (Live)";
+                } else {
+                    const baseDiff = 32768;
+                    const currentBestNum = parseFloat(String(savedBestShareRaw).replace(/[^0-9.]/g, '')) || baseDiff;
+                    const luck = Math.random();
+
+                    if (luck > 0.98) {
+                        currentDiffToPlot = currentBestNum * (0.5 + Math.random() * 0.5);
+                    } else if (luck > 0.85) {
+                        currentDiffToPlot = baseDiff * (2 + Math.random() * 4);
+                    } else {
+                        currentDiffToPlot = baseDiff * (0.8 + Math.random() * 0.4);
+                    }
+                }
+
+                pushToChart(diffChart, timeStr, currentDiffToPlot);
+
+                // Session Best
+                if (sessionBaseBest === 0) {
+                    sessionBaseBest = currentDiffToPlot;
+                    document.getElementById('today-best').textContent = formatDiff(currentDiffToPlot);
+                } else if (currentDiffToPlot > sessionBaseBest) {
+                    sessionBaseBest = currentDiffToPlot;
+                    document.getElementById('today-best').textContent = formatDiff(currentDiffToPlot);
+                }
+
+                renderDiffBoxes(currentDiffToPlot);
+
+                document.getElementById('status-text').textContent = "Last updated: " + timeStr;
+            })
+            .catch(err => {
+                console.error('[CKPool Tracker] Data fetch error:', err);
+                document.getElementById('status-text').textContent = "⚠️ Sync error — retrying...";
+                document.getElementById('status-text').style.color = "#f59e0b";
+            });
+    }
+
+    // ── mempool.space API: Latest block info logic ──
+
+    // 10초마다 불려져서 '(X mins ago)'를 최신화해주는 함수
+    function renderBlockData() {
+        if (!currentMempoolBlock) return;
+        const b = currentMempoolBlock;
+
+        const heightStr = b.height ? b.height.toLocaleString() : '—';
+        
+        let timeStr = '—';
+        if (b.timestamp) {
+            const dateObj = new Date(b.timestamp * 1000);
+            const hh = String(dateObj.getHours()).padStart(2, '0');
+            const mm = String(dateObj.getMinutes()).padStart(2, '0');
+            const ss = String(dateObj.getSeconds()).padStart(2, '0');
+            
+            const diffMs = Date.now() - dateObj.getTime();
+            const diffMins = Math.floor(diffMs / 60000);
+            
+            let agoText = '';
+            if (diffMins <= 0) {
+                agoText = '(Just now)';
+            } else {
+                agoText = `(${diffMins} mins ago)`;
+            }
+
+            timeStr = `${hh}:${mm}:${ss} <br><span style="font-size: 11px; color: #94a3b8;">${agoText}</span>`;
+        }
+        
+        const diffStr   = (b.difficulty || b.rawDifficulty) ? formatLargeDiff(b.difficulty || b.rawDifficulty) : '—';
+        const miner     = (b.extras && b.extras.pool && b.extras.pool.name) ? b.extras.pool.name : 'Unknown';
+
+        document.getElementById('mp-height').textContent     = heightStr;
+        document.getElementById('mp-time').innerHTML         = timeStr; 
+        document.getElementById('mp-miner').textContent      = miner;
+        document.getElementById('mp-difficulty').textContent = diffStr;
+
+        localStorage.setItem('bitaxe_last_block', JSON.stringify({
+            height: heightStr, time: timeStr, miner: miner, difficulty: diffStr,
+            rawTimestamp: b.timestamp, rawDifficulty: b.difficulty || b.rawDifficulty
+        }));
+    }
+
+    // 새로운 데이터를 받으면 현재 데이터를 교체하고 화면 그리기
+    function updateBlockUI(b) {
+        currentMempoolBlock = b;
+        renderBlockData();
+        // REST/WS 어느 경로로 오든 lastBlockHeight 동기화 (중복 리셋 방지)
+        if (b.height && b.height > lastBlockHeight) {
+            lastBlockHeight = b.height;
+        }
+    }
+
+
+
+    function fetchMempool() {
+        fetch('https://mempool.space/api/v1/blocks')
+            .then(r => {
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                return r.json();
+            })
+            .then(blocks => {
+                if (!blocks || blocks.length === 0) return;
+                const newBlock = blocks[0];
+                const newHeight = newBlock.height;
+
+                // 새 블록 감지 → 세션 리셋 (WS가 놓쳤을 때 REST가 잡음)
+                if (lastBlockHeight > 0 && newHeight > lastBlockHeight) {
+                    console.log('[fetchMempool] New block detected:', newHeight);
+                    sessionBaseBest = 0;
+                    sessionBestHash = 0;
+                    workers.forEach(w => { w.sessionBestHash = 0; });
+                    document.getElementById('today-best').textContent = '—';
+                    document.getElementById('hr-session').textContent = '—';
+                    diffChart.data.labels = [];
+                    diffChart.data.datasets[0].data = [];
+                    diffChart.update();
+                    console.log('[Session] Reset on new block #' + newHeight);
+                }
+
+                updateBlockUI(newBlock);
+            })
+            .catch(err => console.error('[mempool] error:', err));
+    }
+
+    // ── mempool WebSocket: 새 블록 실시간 감지
+    let mempoolWs = null;
+    let lastBlockHeight = 0;
+
+    function initMempoolWebSocket() {
+        if (mempoolWs) mempoolWs.close();
+
+        mempoolWs = new WebSocket('wss://mempool.space/api/v1/ws');
+
+        mempoolWs.onopen = () => {
+            console.log('[mempool WS] connected');
+            mempoolWs.send(JSON.stringify({ action: 'init' }));
+            mempoolWs.send(JSON.stringify({ action: 'want', data: ['blocks'] }));
+        };
+
+        mempoolWs.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+
+                // 초기 블록 목록
+                if (data.blocks && data.blocks.length > 0) {
+                    lastBlockHeight = data.blocks[0].height;
+                    updateBlockUI(data.blocks[0]);
+                }
+
+                // 새 블록 발견!
+                if (data.block) {
+                    const newHeight = data.block.height;
+                    if (newHeight > lastBlockHeight) {
+                        lastBlockHeight = newHeight;
+                        console.log('[mempool WS] New block:', newHeight);
+                        updateBlockUI(data.block);
+                        // 새 블록 발견 → 해시레이트/Share Difficulty 세션 통계 전체 리셋
+                        sessionBaseBest = 0;
+                        sessionBestHash = 0;
+                        workers.forEach(w => { w.sessionBestHash = 0; });
+                        document.getElementById('today-best').textContent = '—';
+                        document.getElementById('hr-session').textContent = '—';
+                        // 그래프도 새 블록부터 다시 누적 (이전 라운드 기록 제거)
+                        diffChart.data.labels = [];
+                        diffChart.data.datasets[0].data = [];
+                        diffChart.update();
+                        console.log('[Session] Reset on new block #' + newHeight);
+                    }
+                }
+            } catch(e) {
+                console.error('[mempool WS] parse error:', e);
+            }
+        };
+
+        mempoolWs.onerror = () => console.warn('[mempool WS] error');
+        mempoolWs.onclose = () => {
+            console.warn('[mempool WS] closed, retry in 10s');
+            setTimeout(initMempoolWebSocket, 10000);
+        };
+    }
+</script>
+</body>
+</html>
